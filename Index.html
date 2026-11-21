@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Список справ</title>
+<style>
+body { background: #f0f0f0; font-family: Arial; }
+.box { width: 420px; margin: 30px auto; background: white; padding: 20px; border-radius: 10px; }
+input, select, button { width: 100%; padding: 8px; margin-top: 8px; }
+button { background: green; color: white; border: none; cursor: pointer; }
+.zavdannya { border: 1px solid #ccc; padding: 10px; margin-top: 10px; }
+.gotovo { text-decoration: line-through; opacity: 0.6; }
+</style>
+</head>
+<body>
+<div class="box">
+  <h2>Мій список справ</h2>
+  <input id="nazva" type="text" placeholder="Що треба зробити?">
+  <input id="data" type="date">
+  <p>Важливість:</p>
+  <select id="vazhlyvist"><option>Висока</option><option>Середня</option><option>Низька</option></select>
+  <p>Сесія:</p>
+  <select id="sesiya"><option>Дім</option><option>Школа</option><option>На вулиці</option><option>Інше</option></select>
+  <button onclick="dodaty()">Додати</button>
+  <hr>
+  <p>Фільтр за сесією:</p>
+  <select id="filtr" onchange="pokazaty()"><option>Всі</option><option>Дім</option><option>Школа</option><option>На вулиці</option><option>Інше</option></select>
+  <div id="spysok"></div>
+</div>
+<script>
+let spysokZavdan = [];
+function dodaty() {
+  let nazva = document.getElementById("nazva").value;
+  let data = document.getElementById("data").value;
+  let vazhlyvist = document.getElementById("vazhlyvist").value;
+  let sesiya = document.getElementById("sesiya").value;
+  if (nazva == "") { alert("Напиши щось!"); return; }
+  spysokZavdan.push({nazva: nazva, data: data, vazhlyvist: vazhlyvist, sesiya: sesiya, zrobleno: false});
+  document.getElementById("nazva").value = "";
+  pokazaty();
+}
+function pokazaty() {
+  let filtr = document.getElementById("filtr").value;
+  let spysok = document.getElementById("spysok");
+  spysok.innerHTML = "";
+  for (let i = 0; i < spysokZavdan.length; i++) {
+    if (filtr != "Всі" && spysokZavdan[i].sesiya != filtr) continue;
+    let div = document.createElement("div");
+    div.className = "zavdannya";
+    if (spysokZavdan[i].zrobleno) div.className = "zavdannya gotovo";
+    div.innerHTML = "<b>" + spysokZavdan[i].nazva + "</b><br>" +
+      "Дедлайн: " + spysokZavdan[i].data + "<br>" +
+      "Важливість: " + spysokZavdan[i].vazhlyvist + "<br>" +
+      "Сесія: " + spysokZavdan[i].sesiya + "<br>" +
+      '<button onclick="zrobleno(' + i + ')">Готово</button> ' +
+      '<button onclick="vydalyty(' + i + ')">Видалити</button>';
+    spysok.appendChild(div);
+  }
+}
+function zrobleno(i) { spysokZavdan[i].zrobleno = !spysokZavdan[i].zrobleno; pokazaty(); }
+function vydalyty(i) { spysokZavdan.splice(i, 1); pokazaty(); }
+</script>
+</body>
+</html>

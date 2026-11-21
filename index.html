@@ -5,36 +5,58 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Список справ</title>
 <style>
-*{box-sizing:border-box}
-body{font-family:system-ui,sans-serif;margin:0;background:#f4f6fb;padding:16px}
-.box{max-width:800px;margin:auto;background:white;border-radius:16px;padding:20px}
-h1{text-align:center}
-.form{display:flex;flex-wrap:wrap;gap:8px}
-input,select,button{padding:12px;border-radius:10px;border:1px solid #ddd;font-size:16px}
-input{flex:1;min-width:140px}
-button{background:#6c5ce7;color:white;border:none;cursor:pointer}
-.card{display:flex;justify-content:space-between;align-items:center;background:#f9f9ff;padding:12px;border-radius:12px;margin-top:10px;gap:10px}
-.done{text-decoration:line-through;opacity:.6}
-@media(max-width:600px){.box{padding:12px}.form{flex-direction:column}input,select,button{width:100%}.card{flex-direction:column;align-items:flex-start}}
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+body{margin:0;background:#F1F5F9;color:#0F172A;padding:20px 14px 60px}
+.container{max-width:680px;margin:0 auto}
+.top{background:#0F172A;color:white;padding:28px 24px;border-radius:18px;margin-bottom:20px}
+.top h1{margin:0 0 6px;font-size:32px}
+.top p{margin:0;color:#CBD5E1;font-size:15px}
+.card{background:white;border-radius:18px;padding:20px;box-shadow:0 4px 20px rgba(15,23,42,.06);border:1px solid #E2E8F0}
+label{font-size:13px;font-weight:700;color:#475569;display:block;margin:14px 0 6px}
+.input-row{display:flex;gap:10px}
+input,select{flex:1;padding:14px;border:1.5px solid #E2E8F0;border-radius:12px;font-size:16px;outline:none;background:white}
+input:focus,select:focus{border-color:#2563EB}
+button.add{background:#2563EB;color:white;border:none;padding:0 22px;border-radius:12px;font-weight:800;font-size:16px;cursor:pointer}
+.row2{display:flex;gap:10px}
+.row2>div{flex:1}
+.filters{display:flex;gap:8px;margin:16px 0}
+.filters button{flex:1;padding:11px;border-radius:999px;border:1px solid #E2E8F0;background:white;font-weight:700;cursor:pointer;color:#475569;font-size:14px}
+.filters button.active{background:#0F172A;color:white}
+.task{background:white;border:1px solid #E2E8F0;border-radius:14px;padding:16px;margin-bottom:12px;display:flex;align-items:center;gap:12px}
+.task.done{opacity:.55}.task.done .t{text-decoration:line-through}
+.task .t{flex:1;font-size:18px;font-weight:600}
+.badges{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.badge{font-size:12px;font-weight:800;padding:5px 10px;border-radius:999px;color:white;white-space:nowrap}
+.b-easy{background:#16A34A}.b-med{background:#F97316}.b-hard{background:#DC2626}
+.b-date{background:#2563EB;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;color:white}
+.task button.icon{border:none;background:#F1F5F9;width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:18px;flex-shrink:0}
+.empty{text-align:center;color:#94A3B8;padding:30px 0}
 </style>
 </head>
 <body>
-<div class="box">
-<h1>📋 Список справ</h1>
-<div class="form">
-<input id="nazva" placeholder="Що треба зробити?">
-<input id="data" type="date">
-<select id="vazhlyvist"><option>Важливо</option><option>Середнє</option><option>Неважливо</option></select>
-<select id="skladnist"><option>Легке</option><option>Середнє</option><option>Складне</option></select>
-<select id="sesiya"><option>Сесія</option><option>Навчання</option><option>Особисте</option></select>
-<button onclick="Backend.dodaty()">+ Додати</button>
+<div class="container">
+<div class="top"><h1>Список справ</h1><p>Організуй свій день професійно</p></div>
+<div class="card">
+<div class="input-row"><input id="newTask" placeholder="Що треба зробити?"><button class="add" onclick="addTask()">+ ДОДАТИ</button></div>
+<div class="row2">
+<div><label>Складність</label><select id="diff"><option value="Легка">🟢 Легка</option><option value="Середня" selected>🟠 Середня</option><option value="Складна">🔴 Складна</option></select></div>
+<div><label>Термін - до якого дня?</label><input type="date" id="date"></div>
 </div>
-<div id="spysok"></div>
 </div>
-<script src="backend.js"></script>
+<div class="filters"><button id="f-all" class="active" onclick="setFilter('all')">Всі</button><button id="f-active" onclick="setFilter('active')">Активні</button><button id="f-done" onclick="setFilter('done')">Виконані</button></div>
+<div id="list"></div>
+</div>
 <script>
-const Frontend={show(){document.getElementById('spysok').innerHTML=Backend.data.map((z,i)=>`<div class="card"><span class="${z.zrobleno?'done':''}">${z.nazva} - ${z.data} - ${z.vazhlyvist} - ${z.skladnist} - ${z.sesiya}</span><div><button onclick="Backend.toggle(${i})">✓</button> <button onclick="Backend.del(${i})">🗑️</button></div></div>`).join('')||'<p style="text-align:center">Поки порожньо</p>';}};
-Frontend.show();
+let tasks=JSON.parse(localStorage.getItem('tasks2')||'[]');let filter='all';
+function daysLeft(d){if(!d)return '';let today=new Date();today.setHours(0,0,0,0);let dd=new Date(d);dd.setHours(0,0,0,0);let diff=Math.round((dd-today)/86400000);if(diff===0)return 'Сьогодні';if(diff===1)return 'Залишився 1 день';if(diff>1)return 'Залишилось '+diff+' дні';if(diff<0)return 'Прострочено';return d;}
+function save(){localStorage.setItem('tasks2',JSON.stringify(tasks));render();}
+function addTask(){let inp=document.getElementById('newTask');if(!inp.value.trim())return;tasks.unshift({text:inp.value.trim(),diff:document.getElementById('diff').value,date:document.getElementById('date').value,done:false});inp.value='';document.getElementById('date').value='';save();}
+function setFilter(f){filter=f;document.querySelectorAll('.filters button').forEach(b=>b.classList.remove('active'));document.getElementById('f-'+f).classList.add('active');render();}
+function toggle(i){tasks[i].done=!tasks[i].done;save();}
+function del(i){tasks.splice(i,1);save();}
+function render(){let list=document.getElementById('list');let shown=tasks.map((t,i)=>({t,i})).filter(x=>filter==='all'||(filter==='done'?x.t.done:!x.t.done));if(shown.length===0){list.innerHTML='<div class="empty"><b>Поки порожньо</b>Додайте перше завдання</div>';return;}
+list.innerHTML=shown.map(x=>{let cls=x.t.diff==='Легка'?'b-easy':x.t.diff==='Середня'?'b-med':'b-hard';return `<div class="task ${x.t.done?'done':''}"><button class="icon" onclick="toggle(${x.i})">${x.t.done?'✓':'○'}</button><span class="t">${x.t.text}</span><div class="badges"><span class="badge ${cls}">${x.t.diff.toUpperCase()}</span>${x.t.date?`<span class="b-date">📅 ${daysLeft(x.t.date)} • ${x.t.date}</span>`:''}</div><button class="icon" onclick="del(${x.i})">🗑️</button></div>`}).join('');}
+document.getElementById('newTask').addEventListener('keydown',e=>{if(e.key==='Enter')addTask();});render();
 </script>
 </body>
 </html>
